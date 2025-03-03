@@ -11,7 +11,8 @@ export class AuthService{
         this.client
         .setEndpoint(conf.appwriteUrl) 
         .setProject(conf.appwriteProjectId)
-        .setKey(conf.appwriteApiKey);
+        
+        // setKey(conf.appwriteApiKey);
         
         this.account=new Account(this.client);
     }
