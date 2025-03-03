@@ -1,6 +1,7 @@
 import React from 'react'
 import {Editor } from '@tinymce/tinymce-react';
 import {Controller } from 'react-hook-form';
+import conf from "../conf/conf.js";
 
 
 export default function RTE({name, control, label, defaultValue =""}) {
@@ -15,7 +16,7 @@ export default function RTE({name, control, label, defaultValue =""}) {
         <Editor
         // apiKey:ovwygrevpt9lke14fepvr6hm17qzm22hpmeb0rldi9uj98oy
         initialValue={defaultValue}
-         apiKey='ovwygrevpt9lke14fepvr6hm17qzm22hpmeb0rldi9uj98oy'
+        apiKey = {conf.tinyMCEKey}
         init={{
             initialValue: defaultValue,
             height: 500,
