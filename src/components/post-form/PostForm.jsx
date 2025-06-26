@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 export default function PostForm({ post }) {
+    console.log("PostForm component rendered");
+
     const { register, handleSubmit, watch, setValue, control, getValues } = useForm({
         defaultValues: {
             title: post?.title || "",
@@ -19,35 +21,69 @@ export default function PostForm({ post }) {
     const userData = useSelector((state) => state.auth.userData);
 
     const submit = async (data) => {
+        console.log("Form data submitted:", data);
+
+        if (!userData || !userData.$id) {
+            console.error("User is not logged in or userData is missing");
+            return;
+        }
+
         if (post) {
-            const file = data.image[0] ? await appwriteService.uploadFile(data.image[0]) : null;
+            const file = data.image?.[0]
+                ? await appwriteService.uploadFile(data.image[0])
+                : null;
 
             if (file) {
-                appwriteService.deleteFile(post.featuredImage);
+                console.log("Replacing old image with new:", file);
+                await appwriteService.deleteFile(post.featuredImage);
             }
 
             const dbPost = await appwriteService.updatePost(post.$id, {
                 ...data,
-                featuredImage: file ? file.$id : undefined,
+                featuredImage: file ? file.$id : post.featuredImage,
             });
 
             if (dbPost) {
+                console.log("Post updated successfully:", dbPost);
                 navigate(`/post/${dbPost.$id}`);
+            } else {
+                console.error("Failed to update post.");
             }
         } else {
+            console.log("Creating a new post");
+
+            if (!data.image || !data.image[0]) {
+                console.error("No image provided.");
+                return;
+            }
+
             const file = await appwriteService.uploadFile(data.image[0]);
 
             if (file) {
                 const fileId = file.$id;
                 data.featuredImage = fileId;
-                const dbPost = await appwriteService.createPost({ ...data, userId: userData.$id });
+
+                const previewUrl = appwriteService.getFileUrl(fileId);
+                console.log("Uploaded File ID:", fileId);
+                console.log("Preview URL:", previewUrl);
+
+                const dbPost = await appwriteService.createPost({
+                    ...data,
+                    userId: userData.$id,
+                });
 
                 if (dbPost) {
+                    console.log("Post created successfully:", dbPost);
                     navigate(`/post/${dbPost.$id}`);
+                } else {
+                    console.error("Failed to create post.");
                 }
+            } else {
+                console.error("File upload failed.");
             }
         }
     };
+// console.log(appwriteService.getFilePreview(post.featuredImage));
 
     const slugTransform = useCallback((value) => {
         if (value && typeof value === "string")
@@ -85,10 +121,17 @@ export default function PostForm({ post }) {
                     className="mb-4"
                     {...register("slug", { required: true })}
                     onInput={(e) => {
-                        setValue("slug", slugTransform(e.currentTarget.value), { shouldValidate: true });
+                        setValue("slug", slugTransform(e.currentTarget.value), {
+                            shouldValidate: true,
+                        });
                     }}
                 />
-                <RTE label="Content :" name="content" control={control} defaultValue={getValues("content")} />
+                <RTE
+                    label="Content :"
+                    name="content"
+                    control={control}
+                    defaultValue={getValues("content")}
+                />
             </div>
             <div className="w-1/3 px-2">
                 <Input
@@ -98,21 +141,27 @@ export default function PostForm({ post }) {
                     accept="image/png, image/jpg, image/jpeg, image/gif"
                     {...register("image", { required: !post })}
                 />
-                {post && (
-                    <div className="w-full mb-4">
-                        <img
-                            src={appwriteService.getFilePreview(post.featuredImage)}
-                            alt={post.title}
-                            className="rounded-lg"
-                        />
-                    </div>
+
+                {post && post.featuredImage && (
+                    <>
+                        {console.log("Image ID:", post.featuredImage)}
+                        <div className="w-full mb-4">
+                            <img
+                                src={appwriteService.getFileUrl(post.featuredImage)}
+                                alt={post.title || "Preview"}
+                                className="rounded-lg max-h-60 object-contain border border-gray-300"
+                            />
+                        </div>
+                    </>
                 )}
+
                 <Select
                     options={["active", "inactive"]}
                     label="Status"
                     className="mb-4"
                     {...register("status", { required: true })}
                 />
+
                 <Button type="submit" bgColor={post ? "bg-green-500" : undefined} className="w-full">
                     {post ? "Update" : "Submit"}
                 </Button>

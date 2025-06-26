@@ -50,13 +50,16 @@ export class AuthService{
         return null
     }
 
-    async logout(){
-        try {
-            await this.account.deleteSessions();
-        } catch (error) {
-            console.log("Appwrite service::logout::error",error);
-        }
-    }
+  async logout() {
+  try {
+    await this.account.deleteSession('current'); // Only deletes current session properly
+    return true;
+  } catch (error) {
+    console.log("Appwrite service::logout::error", error);
+    return false;
+  }
+}
+
 
 }
 

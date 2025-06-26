@@ -1,6 +1,7 @@
 import conf from "../conf/conf";
-
-import { Client, ID,Databases,Storage,Query } from "appwrite";
+// import { ID, Permission, Role } from "appwrite";
+// import { Client, ID,Databases,Storage,Query } from "appwrite";
+import { Client, ID, Databases, Storage, Query, Permission, Role } from "appwrite";
 
 
 export class Service{
@@ -86,37 +87,41 @@ export class Service{
     }
 
 
-    async getPosts(queries=[Query.equal("status","active")]){
-        try {
-            return await this.databases.listDocuments(
-                conf.appwriteDatabaseId,
-                conf.appwriteCollectionId,
-               queries,
-            )
-        } catch (error) {
-            console.log("Appwrite service::getPosts::error",error);
-
-        }
+async getPosts(queries = [Query.equal("status", "active")]) {
+  try {
+    return await this.databases.listDocuments(
+      conf.appwriteDatabaseId,
+      conf.appwriteCollectionId,
+      queries
+    );
+  } catch (error) {
+    if (error.code === 401) {
+      console.warn("Unauthorized: user is not logged in.");
+    } else {
+      console.log("Appwrite service::getPosts::error", error);
     }
+    return null;
+  }
+}
+
 
 
     //file upload services
 
 
-    async uploadFile(file){
-        try {
-            return await this.bucket.createFile(
-               conf.appwriteBucketId,
-               ID.unique(),
-               file
-            )
-        } catch (error) {
-            console.log("Appwrite service::uploadFile::error",error);
-             return false;
-        }
+   async uploadFile(file){
+    try {
+        return await this.bucket.createFile(
+            conf.appwriteBucketId,
+            ID.unique(),
+            file,
+            [Permission.read(Role.any())]
+        )
+    } catch (error) {
+        console.log("Appwrite service::uploadFile::error", error);
+        return false;
     }
-
-
+}
     async deleteFile(fileId){
         try {
             await this.bucket.deleteFile(
@@ -130,11 +135,11 @@ export class Service{
         }
     }
 
-    getFilePreview(fileId){
-        return this.bucket.getFilePreview(
+    getFileUrl(fileId){
+        return this.bucket.getFileView(
             conf.appwriteBucketId,
             fileId
-        )
+        ).toString();
     }
 
 
