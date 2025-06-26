@@ -8,21 +8,22 @@ function AllPosts() {
     const [loading, setLoading] = useState(true);
     const userData = useSelector((state) => state.auth.userData);
 
-    useEffect(() => {
-        if (userData) {
-            appwriteService.getPosts().then((posts) => {
-                if (posts) {
-                    setPosts(posts.documents);
-                } else {
-                    setPosts([]);
-                }
-                setLoading(false);
-            });
-        } else {
-            setPosts([]);
-            setLoading(false);
-        }
-    }, [userData]);
+useEffect(() => {
+    if (userData) {
+        appwriteService.getPostsByUser(userData.$id)
+            .then((posts) => {
+                setPosts(posts || []);
+            })
+            .catch((error) => {
+                console.error("Error fetching user posts:", error);
+                setPosts([]);
+            })
+            .finally(() => setLoading(false));
+    } else {
+        setPosts([]);
+        setLoading(false);
+    }
+}, [userData]);
 
     return (
         <div className="w-full py-8">

@@ -36,7 +36,19 @@ export class Service{
         }
     }
 
-
+async getPostsByUser(userId) {
+    try {
+        const response = await this.databases.listDocuments(
+            conf.appwriteDatabaseId,
+            conf.appwriteCollectionId,
+            [Query.equal("userId", userId)]
+        );
+        return response.documents;
+    } catch (error) {
+        console.log("Appwrite service::getPostsByUser::error", error);
+        return [];
+    }
+}
 
     async updatePost(slug,{title,content,featuredImage,status}){
        try {
